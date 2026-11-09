@@ -1,0 +1,588 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Portal de Platina — Dark Souls I, II e III</title>
+  <style>
+    :root {
+      --bg: #0b0c10;
+      --panel: #14161c;
+      --text: #f2f4f8;
+      --muted: #b2b9c8;
+      --danger: #f66;
+      --success: #7ddc7d;
+      --radius: 14px;
+      --shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
+      --ds1: #d9a441;
+      --ds2: #40b1a8;
+      --ds3: #d56142;
+      --accent: var(--ds1);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: radial-gradient(1200px 700px at 20% -15%, #20273a 0%, var(--bg) 60%);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 20px 16px 42px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .card {
+      background: linear-gradient(155deg, rgba(255,255,255,0.03), rgba(255,255,255,0));
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px;
+    }
+
+    h1 { margin: 0; font-size: clamp(1.35rem, 3vw, 2rem); }
+    p { margin: 8px 0 0; color: var(--muted); }
+
+    .controls, .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    button, select, input[type="search"], .file-label {
+      background: #0f1118;
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 10px;
+      padding: 9px 12px;
+      font: inherit;
+    }
+
+    .tabs button {
+      flex: 1;
+      min-width: 210px;
+      text-align: left;
+      border-left: 4px solid transparent;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+    }
+
+    .tabs button.active {
+      border-color: var(--accent);
+      outline: 1px solid color-mix(in oklab, var(--accent) 55%, #fff 10%);
+    }
+
+    .progress-chip {
+      font-size: .86rem;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.08);
+      white-space: nowrap;
+    }
+
+    .badge {
+      display: none;
+      margin-left: 6px;
+      font-size: .9rem;
+    }
+
+    .badge.show { display: inline; }
+
+    .game-head {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 130px;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .art svg { width: 100%; height: auto; display: block; }
+
+    .meta {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 10px;
+      margin-top: 10px;
+      font-size: .95rem;
+    }
+
+    .meta .box {
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      padding: 9px 10px;
+      background: rgba(0,0,0,0.15);
+    }
+
+    .phase {
+      margin-top: 14px;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .phase > summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 10px 12px;
+      background: rgba(255,255,255,0.03);
+      font-weight: 600;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .phase-list { padding: 8px 12px 12px; display: grid; gap: 8px; }
+
+    .item {
+      padding: 8px;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      background: rgba(255,255,255,0.02);
+    }
+
+    .item label {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      align-items: start;
+      gap: 8px;
+      cursor: pointer;
+    }
+
+    .item small { color: var(--muted); display: block; margin-top: 3px; }
+
+    .item.missable {
+      border-color: color-mix(in oklab, var(--accent) 50%, #fff 20%);
+      box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--accent) 35%, transparent);
+    }
+
+    .item.done { opacity: .6; }
+
+    .item.hidden, .phase.hidden { display: none; }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      margin-top: 8px;
+    }
+
+    #file-input { display: none; }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.72);
+      display: none;
+      place-items: center;
+      padding: 18px;
+      z-index: 20;
+    }
+
+    .overlay.show { display: grid; }
+
+    .popup {
+      max-width: 480px;
+      text-align: center;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      padding: 24px;
+      background: #111521;
+      box-shadow: var(--shadow);
+    }
+
+    .hint { font-size: .85rem; color: var(--muted); }
+
+    @media print {
+      .controls, .tabs, .toolbar, .hint { display: none !important; }
+      body { background: #fff; color: #000; }
+      .card { border-color: #ddd; box-shadow: none; background: #fff; }
+      .item { break-inside: avoid; border-color: #ddd; }
+    }
+
+    @media (max-width: 700px) {
+      .game-head { grid-template-columns: 1fr; }
+      .tabs button { min-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <header class="card">
+      <h1>Portal de Platina — Dark Souls I, II e III</h1>
+      <p>Guia em arquivo único, offline, com abas por jogo, filtros e progresso salvo no navegador.</p>
+    </header>
+
+    <section class="card controls">
+      <select id="game-select" aria-label="Selecionar jogo"></select>
+      <input id="search" type="search" placeholder="Buscar no checklist" aria-label="Buscar" />
+      <button id="print-btn" type="button">Imprimir / PDF</button>
+      <button id="export-btn" type="button">Exportar JSON</button>
+      <label class="file-label" for="file-input">Importar JSON</label>
+      <input id="file-input" type="file" accept="application/json" />
+    </section>
+
+    <section class="card tabs" id="tabs" aria-label="Abas dos jogos"></section>
+
+    <section class="card" id="guide" aria-live="polite"></section>
+    <p class="hint">Perdíveis são detectados por palavras-chave no texto; revise os resultados.</p>
+  </main>
+
+  <div class="overlay" id="platinum-overlay" role="dialog" aria-modal="true" aria-labelledby="platinum-title">
+    <div class="popup">
+      <h2 id="platinum-title">🏆 Platina concluída!</h2>
+      <p>Você chegou a 100% no checklist deste guia.</p>
+      <button id="close-overlay" type="button">Fechar</button>
+    </div>
+  </div>
+
+  <script>
+    const storageKey = (id) => `ds-platina:${id}`;
+    const missableKeywords = [
+      'perdível', 'perdivel', 'não volte', 'nao volte', 'última chance', 'ultima chance',
+      'antes de', 'só em ng', 'so em ng', 'só no ng', 'so no ng', 'falhar', 'irreversível', 'irreversivel'
+    ];
+
+    const games = [
+      {
+        id: 'ds1',
+        name: 'Dark Souls Remastered',
+        accent: 'var(--ds1)',
+        art: `<svg viewBox="0 0 140 110" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="70" cy="54" r="30" fill="#d9a441" opacity=".25"/><path d="M70 12l12 30 33 3-25 21 8 32-28-18-28 18 8-32-25-21 33-3 12-30z" fill="#d9a441"/></svg>`,
+        phases: [
+          {
+            title: 'Fase 1 — Início e bases',
+            items: [
+              { text: 'Escolha uma build inicial e defina atributo principal.' },
+              { text: 'Resgate o Estus e acenda fogueiras-chave do início.' },
+              { text: 'Derrote Gargoyle Bell e toque o primeiro sino.' }
+            ]
+          },
+          {
+            title: 'Fase 2 — Pactos e colecionáveis',
+            items: [
+              { text: 'Entre no pacto do Guerreiro da Luz Solar (pode ser perdível sem requisitos).' },
+              { text: 'Conclua a quest de Solaire sem falhar encontros.' },
+              { text: 'Derrote Four Kings antes de avançar para evitar bloqueio de eventos perdível.' }
+            ]
+          },
+          {
+            title: 'Fase 3 — Limpeza e NG+',
+            items: [
+              { text: 'Finalize armas raras e milagres para troféus de coleção.' },
+              { text: 'Feche final A e depois final alternativo em novo ciclo.' }
+            ]
+          }
+        ]
+      },
+      {
+        id: 'ds2',
+        name: 'Dark Souls II: Scholar of the First Sin',
+        accent: 'var(--ds2)',
+        art: `<svg viewBox="0 0 140 110" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="24" y="18" width="92" height="74" rx="10" fill="#40b1a8" opacity=".2"/><path d="M70 18l34 20v34L70 92 36 72V38l34-20z" fill="#40b1a8"/><circle cx="70" cy="55" r="12" fill="#0b0c10"/></svg>`,
+        phases: [
+          {
+            title: 'Fase 1 — Rotas principais',
+            items: [
+              { text: 'Suba para Majula e abra caminhos centrais com Fragrant Branch.' },
+              { text: 'Faça os quatro grandes chefes para abrir Drangleic Castle.' },
+              { text: 'Não queime ascéticas sem objetivo para evitar farm extra.' }
+            ]
+          },
+          {
+            title: 'Fase 2 — Magias e pactos',
+            items: [
+              { text: 'Compre feitiços e piromancias de NPCs antes de mudar de ciclo (última chance).' },
+              { text: 'Suba pacto da Campainha para item específico de troféu.' },
+              { text: 'Conclua quests de Lucatiel e Benhart sem falhar invocações.' }
+            ]
+          },
+          {
+            title: 'Fase 3 — NG+ e encerramento',
+            items: [
+              { text: 'Pegue milagres exclusivos no castelo em NG++.' },
+              { text: 'Finalize os troféus restantes de equipamentos e gestos.' }
+            ]
+          }
+        ]
+      },
+      {
+        id: 'ds3',
+        name: 'Dark Souls III',
+        accent: 'var(--ds3)',
+        art: `<svg viewBox="0 0 140 110" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20 88l24-52h52l24 52H20z" fill="#d56142" opacity=".25"/><path d="M70 14c10 12 20 29 20 43a20 20 0 11-40 0c0-14 10-31 20-43z" fill="#d56142"/></svg>`,
+        phases: [
+          {
+            title: 'Fase 1 — Campanha base',
+            items: [
+              { text: 'Progrida até Catedral e Catacumbas mantendo NPCs vivos.' },
+              { text: 'Colete estilhaços de Estus e ossos para facilitar chefes.' },
+              { text: 'Não entregue tomos proibidos antes de comprar magias (perdível).' }
+            ]
+          },
+          {
+            title: 'Fase 2 — Conquistas de pacto',
+            items: [
+              { text: 'Farm de itens de pacto para milagres, feitiços e anéis.' },
+              { text: 'Conclua final Usurpação do Fogo sem perder etapas de Anri.' },
+              { text: 'Faça backup antes do chefe final para finais restantes (última chance).' }
+            ]
+          },
+          {
+            title: 'Fase 3 — Limpeza',
+            items: [
+              { text: 'Revise anéis por versão de NG+ e NG++.' },
+              { text: 'Feche troféus de gestos, magias e reforços.' }
+            ]
+          }
+        ]
+      }
+    ];
+
+    const state = {
+      activeGame: games[0].id,
+      onlyMissing: false,
+      onlyMissables: false,
+      search: '',
+      shownPlatinum: new Set()
+    };
+
+    const el = {
+      select: document.getElementById('game-select'),
+      tabs: document.getElementById('tabs'),
+      guide: document.getElementById('guide'),
+      search: document.getElementById('search'),
+      printBtn: document.getElementById('print-btn'),
+      exportBtn: document.getElementById('export-btn'),
+      fileInput: document.getElementById('file-input'),
+      overlay: document.getElementById('platinum-overlay'),
+      closeOverlay: document.getElementById('close-overlay')
+    };
+
+    const flatItems = (game) => game.phases.flatMap((phase, phaseIndex) => phase.items.map((item, itemIndex) => ({ phaseIndex, itemIndex, text: item.text })));
+
+    function detectMissable(text) {
+      const lower = text.toLowerCase();
+      return missableKeywords.some((keyword) => lower.includes(keyword));
+    }
+
+    function loadProgress(gameId) {
+      try {
+        const raw = localStorage.getItem(storageKey(gameId));
+        if (!raw) return {};
+        const parsed = JSON.parse(raw);
+        return parsed && typeof parsed === 'object' ? parsed : {};
+      } catch {
+        return {};
+      }
+    }
+
+    function saveProgress(gameId, progress) {
+      localStorage.setItem(storageKey(gameId), JSON.stringify(progress));
+    }
+
+    function progressFor(game) {
+      const items = flatItems(game);
+      const progress = loadProgress(game.id);
+      const done = items.filter((i) => progress[`${i.phaseIndex}-${i.itemIndex}`]).length;
+      const total = items.length || 1;
+      const percent = Math.round((done / total) * 100);
+      return { done, total, percent };
+    }
+
+    function renderTabs() {
+      el.tabs.innerHTML = '';
+      games.forEach((game) => {
+        const { percent } = progressFor(game);
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = state.activeGame === game.id ? 'active' : '';
+        button.style.setProperty('--accent', game.accent);
+        button.innerHTML = `<span>${game.name}<span class="badge ${percent === 100 ? 'show' : ''}">🏆</span></span><span class="progress-chip">${percent}%</span>`;
+        button.addEventListener('click', () => {
+          state.activeGame = game.id;
+          el.select.value = game.id;
+          render();
+        });
+        el.tabs.appendChild(button);
+      });
+    }
+
+    function renderGameSelect() {
+      el.select.innerHTML = games.map((game) => `<option value="${game.id}">${game.name}</option>`).join('');
+      el.select.value = state.activeGame;
+    }
+
+    function renderGuide() {
+      const game = games.find((g) => g.id === state.activeGame);
+      const progress = loadProgress(game.id);
+      const { done, total, percent } = progressFor(game);
+      document.documentElement.style.setProperty('--accent', game.accent);
+
+      const missableTotal = flatItems(game).filter((i) => detectMissable(i.text)).length;
+      const missablePending = flatItems(game).filter((i) => detectMissable(i.text) && !progress[`${i.phaseIndex}-${i.itemIndex}`]).length;
+
+      const section = document.createElement('section');
+      section.innerHTML = `
+        <div class="game-head">
+          <div>
+            <h2>${game.name}</h2>
+            <p>Checklist de guia. O 100% deste portal reflete apenas estes itens.</p>
+            <div class="toolbar">
+              <button type="button" id="only-missing">${state.onlyMissing ? 'Mostrar tudo' : 'Só o que falta'}</button>
+              <button type="button" id="only-missables">${state.onlyMissables ? 'Mostrar tudo' : 'Só perdíveis'}</button>
+            </div>
+          </div>
+          <div class="art" aria-hidden="true">${game.art}</div>
+        </div>
+        <div class="meta">
+          <div class="box"><strong>Progresso:</strong> ${done}/${total} (${percent}%)</div>
+          <div class="box"><strong>Perdíveis:</strong> ${missablePending} pendentes de ${missableTotal}</div>
+        </div>
+      `;
+
+      game.phases.forEach((phase, phaseIndex) => {
+        const details = document.createElement('details');
+        details.className = 'phase';
+        details.open = true;
+
+        const list = document.createElement('div');
+        list.className = 'phase-list';
+
+        let visibleCount = 0;
+        phase.items.forEach((item, itemIndex) => {
+          const key = `${phaseIndex}-${itemIndex}`;
+          const checked = !!progress[key];
+          const isMissable = detectMissable(item.text);
+          const textMatch = item.text.toLowerCase().includes(state.search);
+
+          let visible = textMatch;
+          if (state.onlyMissing && checked) visible = false;
+          if (state.onlyMissables && !isMissable) visible = false;
+
+          const row = document.createElement('div');
+          row.className = `item ${checked ? 'done' : ''} ${isMissable ? 'missable' : ''} ${visible ? '' : 'hidden'}`;
+          row.innerHTML = `
+            <label>
+              <input type="checkbox" ${checked ? 'checked' : ''} data-key="${key}" />
+              <span>${item.text}${isMissable ? '<small>⚠ Possível perdível</small>' : ''}</span>
+            </label>
+          `;
+          list.appendChild(row);
+          if (visible) visibleCount += 1;
+        });
+
+        const phaseDone = phase.items.every((_, idx) => progress[`${phaseIndex}-${idx}`]);
+        const summary = document.createElement('summary');
+        summary.textContent = `${phase.title} · ${phaseDone ? 'Concluída' : 'Em andamento'}`;
+        details.appendChild(summary);
+        details.appendChild(list);
+
+        if ((state.onlyMissing && phaseDone) || visibleCount === 0) {
+          details.classList.add('hidden');
+        }
+
+        section.appendChild(details);
+      });
+
+      section.addEventListener('change', (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLInputElement) || target.type !== 'checkbox') return;
+        const next = { ...loadProgress(game.id), [target.dataset.key]: target.checked };
+        saveProgress(game.id, next);
+        render();
+      });
+
+      section.querySelector('#only-missing').addEventListener('click', () => {
+        state.onlyMissing = !state.onlyMissing;
+        render();
+      });
+
+      section.querySelector('#only-missables').addEventListener('click', () => {
+        state.onlyMissables = !state.onlyMissables;
+        render();
+      });
+
+      el.guide.innerHTML = '';
+      el.guide.appendChild(section);
+
+      if (percent === 100 && !state.shownPlatinum.has(game.id)) {
+        state.shownPlatinum.add(game.id);
+        el.overlay.classList.add('show');
+      }
+    }
+
+    function render() {
+      state.search = el.search.value.trim().toLowerCase();
+      renderTabs();
+      renderGuide();
+    }
+
+    function exportCurrentGame() {
+      const game = games.find((g) => g.id === state.activeGame);
+      const payload = {
+        gameId: game.id,
+        gameName: game.name,
+        exportedAt: new Date().toISOString(),
+        progress: loadProgress(game.id)
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${game.id}-platinum-backup.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    async function importCurrentGame(file) {
+      try {
+        const text = await file.text();
+        const payload = JSON.parse(text);
+        const game = games.find((g) => g.id === state.activeGame);
+        if (!payload || typeof payload !== 'object' || payload.gameId !== game.id || typeof payload.progress !== 'object') {
+          alert('JSON inválido para o jogo selecionado.');
+          return;
+        }
+        saveProgress(game.id, payload.progress);
+        render();
+      } catch {
+        alert('Não foi possível importar este arquivo JSON.');
+      } finally {
+        el.fileInput.value = '';
+      }
+    }
+
+    el.select.addEventListener('change', () => {
+      state.activeGame = el.select.value;
+      state.onlyMissing = false;
+      state.onlyMissables = false;
+      render();
+    });
+
+    el.search.addEventListener('input', render);
+    el.printBtn.addEventListener('click', () => window.print());
+    el.exportBtn.addEventListener('click', exportCurrentGame);
+    el.fileInput.addEventListener('change', (event) => {
+      const file = event.target.files?.[0];
+      if (file) importCurrentGame(file);
+    });
+
+    el.closeOverlay.addEventListener('click', () => el.overlay.classList.remove('show'));
+    el.overlay.addEventListener('click', (event) => {
+      if (event.target === el.overlay) el.overlay.classList.remove('show');
+    });
+
+    renderGameSelect();
+    render();
+  </script>
+</body>
+</html>
